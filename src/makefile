@@ -15,7 +15,8 @@
 
 
 # MCU name
-MCU = at90s2313
+#MCU = at90s2313
+MCU = attiny2313
 
 # Output format. (can be srec, ihex)
 FORMAT = ihex
@@ -25,7 +26,7 @@ TARGET = minidmx
 
 # Optimization level (can be 0, 1, 2, 3, s) 
 # (Note: 3 is not always the best optimization level. See avr-libc FAQ)
-OPT = s
+OPT = 1
 
 
 # List C source files here. (C dependencies are automatically generated.)

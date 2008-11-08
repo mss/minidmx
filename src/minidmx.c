@@ -1,8 +1,8 @@
 //===========================================================================
 // Dateiname : minidmx.c
 // Funktion  : DMX-Ausgang für den PC
-// Compiler  : WinAVR v20030312 (http://sourceforge.net/projects/winavr/)
-// MCU       : AT90S2313
+// Compiler  : WinAVR (http://sourceforge.net/projects/winavr/)
+// MCU       : AT90S2313 ATTiny2313
 // Quarz     : 9,216 MHz
 // Änderungen: 18.02.2001 - V1.0
 //             - Erste öffentliche Version
@@ -16,13 +16,19 @@
 //               C neu geschrieben
 //             09.09.2003 - V2.0
 //             - Fehler in der Generierung des DMX-Signals behoben
+//             17.12.2006 - V2.0 (Ulrich Radig mail@ulrichradig.de)
+//             - Anpassung an neuere WinAVR Version
+//             - Anpassung an meine Platinen Version
+//
 // Copyright (C) 2001,2002,2003 Mathias Dzionsko (madz@gmx.de)
 //===========================================================================
 #include <inttypes.h>
 #include <avr\io.h>
 #include <avr\interrupt.h>
-#include <avr\signal.h>
-#include <avr\delay.h>
+//#include <avr\signal.h>
+
+#define F_CPU           9216000
+#include <util/delay.h>
 //---------------------------------------------------------------------------
 // Makros
 
@@ -37,6 +43,14 @@
 
 // Taktfrequenz der MCU in kHz (für Delay16)
 #define XTAL            9216
+
+#if defined (__AVR_ATtiny2313__)
+    #define TCCR0 TCCR0A
+	#define USR UCSRA
+	#define UCR UCSRB
+	#define UBRR UBRRL
+    #define UART_TX_vect USART_TX_vect
+#endif
 
 // DMX
 #define DMX_PORT        PORTB
@@ -68,8 +82,8 @@
 // PD0 - RXD
 // PD1 - TXD
 // PD6 - Triggersignal für Oszilloskop (zu Testzwecken)
-#define PORTD_INIT      BITS2BYTE(0,0,0,0,0,0,1,0)
-#define DDRD_INIT       BITS2BYTE(0,1,0,0,0,0,1,0)
+#define PORTD_INIT      BITS2BYTE(0,0,1,1,0,0,1,0)
+#define DDRD_INIT       BITS2BYTE(0,0,1,1,0,0,1,0)
 
 // UART
 #define UBRR_INIT       4                       // 115200 Baud
@@ -121,22 +135,23 @@ SIGNAL(SIG_OVERFLOW0)
   
   // LED1 ein/ausschalten
   if (TimerLED1) {
-    cbi(LED_PORT, LED1_PIN);
+    LED_PORT &= ~(1<<LED1_PIN);
     TimerLED1--;
-  } else sbi(LED_PORT, LED1_PIN);
+  } else LED_PORT |= (1<<LED1_PIN);
 
   // LED2 ein/ausschalten
   if (TimerLED2) {
-    cbi(LED_PORT, LED2_PIN);
+    LED_PORT &= ~(1<<LED2_PIN);
     TimerLED2--;
-  } else sbi(LED_PORT, LED2_PIN);
+  } else LED_PORT |= (1<<LED2_PIN);
 }
 //---------------------------------------------------------------------------
 // SIG_UART_RECV Interrupt
 
-SIGNAL(SIG_UART_RECV)
+ISR (UART_TX_vect)
 {
   uint8_t nextpos;
+  unsigned char tmp ;
 
   // Nächste Bufferposition ausrechnen
   nextpos=RxBufferIn+1;
@@ -146,7 +161,7 @@ SIGNAL(SIG_UART_RECV)
   if (nextpos==RxBufferOut) {
     // Buffer ist übergelaufen
     Error|=E_BUFFEROVERFLOW;
-    inb(UDR); // UART Data Register leeren
+    tmp = UDR; // UART Data Register leeren
   } else {
     // Empfangenes Byte in den Buffer schreiben
     RxBuffer[RxBufferIn]=UDR;
@@ -196,6 +211,7 @@ void UARTSendByte(uint8_t data)
 // Prozent, welche innerhalb der zulässigen Toleranz liegt.
 // Interrupts werden für 44,3 µs nicht zugelassen.
 
+
 void DMXSendByte(uint8_t value)
 {
   asm volatile (
@@ -244,6 +260,7 @@ void DMXSendByte(uint8_t value)
     : : "I" (_SFR_IO_ADDR(DMX_PORT)), "I" (DMX_PIN), "r" (value) : "r31"
   );
 }
+
 //---------------------------------------------------------------------------
 // DMXSendReset
 
@@ -252,10 +269,10 @@ void DMXSendByte(uint8_t value)
 
 void DMXSendReset(void)
 {
-  cbi(DMX_PORT, DMX_PIN);       // RESET-Signal senden
+  DMX_PORT &=~(1<<DMX_PIN);       // RESET-Signal senden
   Delay16(DELAY16VAL(100));     // 100µs (min. 88µs) warten
 
-  sbi(DMX_PORT, DMX_PIN);       // MARK-Signal senden
+  DMX_PORT |= (1<<DMX_PIN);       // MARK-Signal senden
   Delay16(DELAY16VAL(10));      // 10µs (min. 8µs) warten
 
   DMXSendByte(0);               // Startbyte (0) senden
@@ -303,7 +320,7 @@ int main(void)
   sei();
 
   // LED3 einschalten
-  cbi(LED_PORT, LED3_PIN);
+  LED_PORT |=(1 << LED3_PIN);
 
   // Hauptschleife
   while (1) {
