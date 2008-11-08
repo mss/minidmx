@@ -1,15 +1,15 @@
 //===========================================================================
 // Dateiname : minidmx.c
-// Funktion  : DMX-Ausgang für den PC
+// Funktion  : DMX-Ausgang fÃ¼r den PC
 // Compiler  : WinAVR (http://sourceforge.net/projects/winavr/)
 // MCU       : AT90S2313 ATTiny2313
 // Quarz     : 9,216 MHz
-// Änderungen: 18.02.2001 - V1.0
-//             - Erste öffentliche Version
+// Ã„nderungen: 18.02.2001 - V1.0
+//             - Erste Ã¶ffentliche Version
 //             05.02.2003 - V1.1
 //             - LED1 zeigt nun ein erfolgreiches Senden der DMX Daten an
 //             - LED2 zeigt Fehler beim Datenempfang vom PC an
-//             - LED3 zeigt das Ende das Startvorgangs an (Daten können nun
+//             - LED3 zeigt das Ende das Startvorgangs an (Daten kÃ¶nnen nun
 //               gesendet werden)
 //             21.03.2003 - V2.0 Testversion
 //             - Der Quelltext der Firmware wurde in der Programmiersprache
@@ -35,13 +35,13 @@
 #define BITS2BYTE(b7,b6,b5,b4,b3,b2,b1,b0) \
   (b7<<7|b6<<6|b5<<5|b4<<4|b3<<3|b2<<2|b1<<1|b0)
 
-// Verzögert den Programmablauf um t µs.
+// VerzÃ¶gert den Programmablauf um t Âµs.
 #define Delay16(l)      _delay_loop_2(l)
 #define DELAY16VAL(t)   ((XTAL*(long)(t))/4000)
 //---------------------------------------------------------------------------
 // Konstanten
 
-// Taktfrequenz der MCU in kHz (für Delay16)
+// Taktfrequenz der MCU in kHz (fÃ¼r Delay16)
 #define XTAL            9216
 
 #if defined (__AVR_ATtiny2313__)
@@ -58,7 +58,7 @@
 
 // LED1 zeigt ein erfolgreiches Senden der DMX Daten an
 // LED2 zeigt Fehler beim Datenempfang vom PC an
-// LED3 zeigt das Ende das Startvorgangs an (Daten können nun
+// LED3 zeigt das Ende das Startvorgangs an (Daten kÃ¶nnen nun
 // gesendet werden)
 #define LED_PORT        PORTB
 #define LED1_PIN        PB2
@@ -81,7 +81,7 @@
 // Port D Pins
 // PD0 - RXD
 // PD1 - TXD
-// PD6 - Triggersignal für Oszilloskop (zu Testzwecken)
+// PD6 - Triggersignal fÃ¼r Oszilloskop (zu Testzwecken)
 #define PORTD_INIT      BITS2BYTE(0,0,1,1,0,0,1,0)
 #define DDRD_INIT       BITS2BYTE(0,0,1,1,0,0,1,0)
 
@@ -107,7 +107,7 @@
 #define P_ERROR         0xC0
 #define P_ACK           0xC1
 
-// Konstanten für die Variable Error
+// Konstanten fÃ¼r die Variable Error
 #define E_BUFFEROVERFLOW        1
 #define E_UARTTIMEOUT           2
 #define E_PROTOCOLERROR         4
@@ -118,7 +118,7 @@ volatile uint8_t        TimerLED1, TimerLED2;   // LED Timer
 volatile uint8_t        UARTTimer;
 volatile uint8_t        Error;
 
-// Empgangspuffer für die serielle Schnittstelle
+// Empgangspuffer fÃ¼r die serielle Schnittstelle
 uint8_t                 RxBuffer[RX_BUFSIZE];
 uint8_t                 RxBufferOut;
 volatile uint8_t        RxBufferIn;
@@ -153,13 +153,13 @@ ISR (UART_TX_vect)
   uint8_t nextpos;
   unsigned char tmp ;
 
-  // Nächste Bufferposition ausrechnen
+  // NÃ¤chste Bufferposition ausrechnen
   nextpos=RxBufferIn+1;
   if (nextpos==RX_BUFSIZE) nextpos=0;
 
   // Ist der Buffer voll?
   if (nextpos==RxBufferOut) {
-    // Buffer ist übergelaufen
+    // Buffer ist Ã¼bergelaufen
     Error|=E_BUFFEROVERFLOW;
     tmp = UDR; // UART Data Register leeren
   } else {
@@ -205,11 +205,11 @@ void UARTSendByte(uint8_t data)
 //---------------------------------------------------------------------------
 // DMXSendByte
 
-// Sendet ein Datenbyte über die DMX-Leitung.
-// Die benötigten Takte für ein DMX-Bit sind 37. Die Taktfrequenz beträgt
-// 9,216 MHz. Das ergibt 4,0147 µs pro Bit. Die Abweichung beträgt dann 0,37
-// Prozent, welche innerhalb der zulässigen Toleranz liegt.
-// Interrupts werden für 44,3 µs nicht zugelassen.
+// Sendet ein Datenbyte Ã¼ber die DMX-Leitung.
+// Die benÃ¶tigten Takte fÃ¼r ein DMX-Bit sind 37. Die Taktfrequenz betrÃ¤gt
+// 9,216 MHz. Das ergibt 4,0147 Âµs pro Bit. Die Abweichung betrÃ¤gt dann 0,37
+// Prozent, welche innerhalb der zulÃ¤ssigen Toleranz liegt.
+// Interrupts werden fÃ¼r 44,3 Âµs nicht zugelassen.
 
 
 void DMXSendByte(uint8_t value)
@@ -264,16 +264,16 @@ void DMXSendByte(uint8_t value)
 //---------------------------------------------------------------------------
 // DMXSendReset
 
-// Sendet ein Reset-Signal mit anschließendem Start-Byte über die
+// Sendet ein Reset-Signal mit anschlieÃŸendem Start-Byte Ã¼ber die
 // DMX-Leitung.
 
 void DMXSendReset(void)
 {
   DMX_PORT &=~(1<<DMX_PIN);       // RESET-Signal senden
-  Delay16(DELAY16VAL(100));     // 100µs (min. 88µs) warten
+  Delay16(DELAY16VAL(100));     // 100Âµs (min. 88Âµs) warten
 
   DMX_PORT |= (1<<DMX_PIN);       // MARK-Signal senden
-  Delay16(DELAY16VAL(10));      // 10µs (min. 8µs) warten
+  Delay16(DELAY16VAL(10));      // 10Âµs (min. 8Âµs) warten
 
   DMXSendByte(0);               // Startbyte (0) senden
 }
@@ -331,7 +331,7 @@ int main(void)
       if (data==P_BLKSTART) {
         data=UARTRecvByte();
         if (!Error) {
-          // Befehl vom PC ausführen
+          // Befehl vom PC ausfÃ¼hren
           switch (data) {
             case P_DMXOUT96: DMXSendChannels(96); break;
             case P_DMXOUT256: DMXSendChannels(256); break;
@@ -356,7 +356,7 @@ int main(void)
     } else {
       // Befehl erfolgreich bearbeitet
       TimerLED1=LED1_ONTIME;
-      // Bestätigung an den PC senden
+      // BestÃ¤tigung an den PC senden
       UARTSendByte(P_BLKSTART);
       UARTSendByte(P_ACK);
       UARTSendByte(P_BLKEND);
